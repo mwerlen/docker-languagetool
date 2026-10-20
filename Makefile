@@ -16,18 +16,18 @@ build: download
 	docker buildx build $(BUILDARG_VERSION) $(BUILDARG_PLATFORM) -t $(IMAGENAME):latest .
 	docker buildx build $(BUILDARG_VERSION) --load -t $(IMAGENAME):latest .
 
-download: languagetool-$(VERSION).zip
+download: LanguageTool-stable.zip
 	-rm -rf LanguageTool-$(VERSION) LanguageTool-$(UNPACKED_VERSION)
-	echo ":: unzipping languagetool-$(VERSION).zip"
-	unzip -o languagetool-$(VERSION).zip 2>&1 1>/dev/null
+	echo ":: unzipping LanguageTool-stable.zip"
+	unzip -o LanguageTool-stable.zip 2>&1 1>/dev/null
+	@test -f LanguageTool-$(UNPACKED_VERSION)/languagetool-server.jar || \
+		{ echo ":: LanguageTool-stable.zip does not contain version $(UNPACKED_VERSION), found: $$(ls -d LanguageTool-*/)"; exit 1; }
 
-languagetool-$(VERSION).zip:
-	curl -L https://github.com/languagetool-org/languagetool/archive/refs/tags/v$(VERSION).zip -o languagetool-$(VERSION).zip
+LanguageTool-stable.zip:
+	curl -fL https://languagetool.org/download/LanguageTool-stable.zip -o LanguageTool-stable.zip
 
 test: test-cleanup.1
 test: test-start
-test: TESTIPADDRESS=$(subst ",,$(shell docker inspect languagetool | jq '.[0].NetworkSettings.IPAddress'))
-test: test-print-ip-address
 test: test-run-test-lang
 test: test-run-test-en
 test: test-run-test-fr
@@ -38,15 +38,12 @@ test-start:
 	docker run -d --name languagetool -p 8081:8081 $(IMAGENAME):latest
 	sleep 6
 
-test-print-ip-address:
-	@echo "IP address of languagetools docker container: $(TESTIPADDRESS)"
-
 test-run-test-lang:
 	@echo ""
 	curl \
 		-X GET \
 		--header 'Accept: application/json' \
-		'http://$(TESTIPADDRESS):8081/v2/languages'
+		'http://localhost:8081/v2/languages'
 
 test-run-test-en:
 	@echo ""
@@ -55,7 +52,7 @@ test-run-test-en:
 		--header 'Content-Type: application/x-www-form-urlencoded' \
 		--header 'Accept: application/json' \
 		-d 'text=hello%20woorld&language=en-US&motherTongue=de-DE&enabledOnly=false' \
-		'http://$(TESTIPADDRESS):8081/v2/check'
+		'http://localhost:8081/v2/check'
 
 test-run-test-fr:
 	@echo ""
@@ -63,7 +60,7 @@ test-run-test-fr:
 		--header 'Content-Type: application/x-www-form-urlencoded' \
 		--header 'Accept: application/json' \
 		-d 'text=hello%20woorld&language=fr&motherTongue=de-DE&enabledOnly=false' \
-		'http://$(TESTIPADDRESS):8081/v2/check'
+		'http://localhost:8081/v2/check'
 
 .PHONY: test-cleanup
 test-cleanup.%:

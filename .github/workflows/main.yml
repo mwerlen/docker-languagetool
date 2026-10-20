@@ -1,5 +1,5 @@
 
-name: Release for merlen/docker-languagetool
+name: Release for mwerlen/docker-languagetool
 
 on:
   push:
@@ -12,6 +12,9 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
