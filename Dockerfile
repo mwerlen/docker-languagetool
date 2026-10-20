@@ -5,7 +5,7 @@ FROM docker.io/library/eclipse-temurin:19
 ARG VERSION
 ARG UNPACKED_VERSION
 
-LABEL maintainer="Silvio Fricke <silvio.fricke@gmail.com>"
+LABEL maintainer="Maxime Werlen <maxime@werlen.fr>"
 
 ADD ./languagetool-"${UNPACKED_VERSION}" /languagetool-"${UNPACKED_VERSION}"
 
@@ -14,4 +14,4 @@ WORKDIR /languagetool-"${UNPACKED_VERSION}"
 COPY misc/start.sh .
 CMD [ "bash", "start.sh" ]
 USER nobody
-EXPOSE 8010
+EXPOSE 8081

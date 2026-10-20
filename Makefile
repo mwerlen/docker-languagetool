@@ -35,7 +35,7 @@ test: test-cleanup.2
 
 test-start:
 	@echo ""
-	docker run -d --name languagetool -p 8010:8010 $(IMAGENAME):latest
+	docker run -d --name languagetool -p 8081:8081 $(IMAGENAME):latest
 	sleep 6
 
 test-print-ip-address:
@@ -46,7 +46,7 @@ test-run-test-lang:
 	curl \
 		-X GET \
 		--header 'Accept: application/json' \
-		'http://$(TESTIPADDRESS):8010/v2/languages'
+		'http://$(TESTIPADDRESS):8081/v2/languages'
 
 test-run-test-en:
 	@echo ""
@@ -55,7 +55,7 @@ test-run-test-en:
 		--header 'Content-Type: application/x-www-form-urlencoded' \
 		--header 'Accept: application/json' \
 		-d 'text=hello%20woorld&language=en-US&motherTongue=de-DE&enabledOnly=false' \
-		'http://$(TESTIPADDRESS):8010/v2/check'
+		'http://$(TESTIPADDRESS):8081/v2/check'
 
 test-run-test-fr:
 	@echo ""
@@ -63,7 +63,7 @@ test-run-test-fr:
 		--header 'Content-Type: application/x-www-form-urlencoded' \
 		--header 'Accept: application/json' \
 		-d 'text=hello%20woorld&language=fr&motherTongue=de-DE&enabledOnly=false' \
-		'http://$(TESTIPADDRESS):8010/v2/check'
+		'http://$(TESTIPADDRESS):8081/v2/check'
 
 .PHONY: test-cleanup
 test-cleanup.%:

@@ -1,5 +1,5 @@
 
-name: Test for silviof/docker-languagetool
+name: Test for mwerlen/docker-languagetool
 
 on:
   pull_request:

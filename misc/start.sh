@@ -24,4 +24,4 @@ if [ "$EXTRA_LT" = true ]; then
 fi
 echo EXTRAOPTIONS=$EXTRAOPTIONS
 
-java ${JAVAOPTIONS} -cp languagetool-server.jar org.languagetool.server.HTTPServer --port 8010 --public --allow-origin '*' ${EXTRAOPTIONS}
+java ${JAVAOPTIONS} -cp languagetool-server.jar org.languagetool.server.HTTPServer --port 8081 --public --allow-origin '*' ${EXTRAOPTIONS}

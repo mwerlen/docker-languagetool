@@ -14,11 +14,11 @@ This is a Dockerfile to get the languagetools running on a system without java.
 
 # Usage
 
-The Server is running on port 8010, this port should exposed.
+The Server is running on port 8081, this port should exposed.
 
-    $ docker pull silviof/docker-languagetool
+    $ docker pull ghcr.io/mwerlen/docker-languagetool
     [...]
-    $ docker run --rm -p 8010:8010 silviof/docker-languagetool
+    $ docker run --rm -p 8081:8081 ghcr.io/mwerlen/docker-languagetool
 
 Or you run it in background via `-d`-option.
 
@@ -28,10 +28,10 @@ docker run --name languagetool \
                         --cap-drop=ALL \
                         --user=65534:65534 \
                         --read-only \
-                        -p 127.0.0.1:8010:8010 \
+                        -p 127.0.0.1:8081:8081 \
                         --memory 412m --memory-swap 500m \
                         -e EXTRAOPTIONS="-Xmx382M" \
-                        silviof/docker-languagetool:latest
+                        ghcr.io/mwerlen/docker-languagetool:latest
 ```
 
 Route information can be found at https://languagetool.org/http-api/swagger-ui/#/default, an easy route to test that it's running is `/v2/languages`.
@@ -56,4 +56,4 @@ Download English ngrams with the commands:
 
 One can use them using web browser plugin "Local server (localhost)" setting by running:
 
-    docker run -d --name languagetool -p 127.0.0.1:8081:8010 -v `pwd`/ngrams:/ngrams:ro --restart=unless-stopped silviof/docker-languagetool
+    docker run -d --name languagetool -p 127.0.0.1:8081:8081 -v `pwd`/ngrams:/ngrams:ro --restart=unless-stopped ghcr.io/mwerlen/docker-languagetool
