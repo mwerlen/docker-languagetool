@@ -2,5 +2,5 @@
 VERSION := 6.7
 UNPACKED_VERSION := $(shell echo $(VERSION) | sed -e 's/\([0-9]\+\.[0-9]\+\)\(.*\)/\1/')
 BUILDARG_VERSION := --build-arg VERSION=$(VERSION) --build-arg UNPACKED_VERSION=$(UNPACKED_VERSION)
-IMAGENAME := docker.io/ghcr.io/mwerlen/docker-languagetool
+IMAGENAME := ghcr.io/mwerlen/docker-languagetool
 BUILDARG_PLATFORM := --platform linux/amd64,linux/arm64/v8,linux/arm/v7
