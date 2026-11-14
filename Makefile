@@ -14,7 +14,7 @@ prepare:
 
 # Local image, for the current platform only
 build: download
-	docker buildx build $(BUILDARG_VERSION) --load -t $(IMAGENAME):latest .
+	docker buildx build $(BUILDARG_VERSION) --load -t $(IMAGENAME):latest -t $(IMAGENAME):$(VERSION) .
 
 # Check that the image builds on every published platform (CI, needs QEMU)
 build-multiarch: download
