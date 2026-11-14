@@ -30,8 +30,8 @@ docker run --name languagetool \
                         --read-only \
                         --tmpfs /tmp \
                         -p 127.0.0.1:8081:8081 \
-                        --memory 412m --memory-swap 500m \
-                        -e JAVAOPTIONS="-Xmx382M" \
+                        --memory 1g --memory-swap 1g \
+                        -e JAVAOPTIONS="-XX:MaxRAMPercentage=60" \
                         ghcr.io/mwerlen/docker-languagetool:latest
 ```
 
