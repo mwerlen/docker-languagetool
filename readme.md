@@ -30,7 +30,7 @@ docker run --name languagetool \
                         --read-only \
                         -p 127.0.0.1:8081:8081 \
                         --memory 412m --memory-swap 500m \
-                        -e EXTRAOPTIONS="-Xmx382M" \
+                        -e JAVAOPTIONS="-Xmx382M" \
                         ghcr.io/mwerlen/docker-languagetool:latest
 ```
 
