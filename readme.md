@@ -46,12 +46,25 @@ To support [ngrams] you need an additional volume or directory mounted to the
 [ngrams]: https://dev.languagetool.org/finding-errors-using-n-gram-data
 
 
-Download English ngrams with the commands:
+Several languages can be installed side by side: each archive extracts into
+its own sub-directory (`ngrams/en`, `ngrams/fr`, ...), and LanguageTool picks
+the right one for the checked language.
 
-    mkdir ngrams
+Download English ngrams (~9 GB zipped, ~15 GB extracted) with the commands:
+
+    mkdir -p ngrams
     wget https://languagetool.org/download/ngram-data/ngrams-en-20150817.zip
     (cd ngrams && unzip ../ngrams-en-20150817.zip)
     rm -f ngrams-en-20150817.zip
+
+Download French ngrams (~2 GB zipped) with the commands:
+
+    mkdir -p ngrams
+    wget https://languagetool.org/download/ngram-data/ngrams-fr-20150913.zip
+    (cd ngrams && unzip ../ngrams-fr-20150913.zip)
+    rm -f ngrams-fr-20150913.zip
+
+Other languages are listed at https://languagetool.org/download/ngram-data/.
 
 
 One can use them using web browser plugin "Local server (localhost)" setting by running:
