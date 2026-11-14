@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-FROM docker.io/library/eclipse-temurin:19
+FROM docker.io/library/eclipse-temurin:21
 
 # see Makefile.version
 ARG VERSION
