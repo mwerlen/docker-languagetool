@@ -29,7 +29,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          make build
+          make build build-multiarch
 
       - name: Run tests
         run: |

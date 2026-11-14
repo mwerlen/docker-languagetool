@@ -12,9 +12,13 @@ envout:
 prepare:
 	sudo apt-get -qq -y install curl
 
+# Local image, for the current platform only
 build: download
-	docker buildx build $(BUILDARG_VERSION) $(BUILDARG_PLATFORM) -t $(IMAGENAME):latest .
 	docker buildx build $(BUILDARG_VERSION) --load -t $(IMAGENAME):latest .
+
+# Check that the image builds on every published platform (CI, needs QEMU)
+build-multiarch: download
+	docker buildx build $(BUILDARG_VERSION) $(BUILDARG_PLATFORM) -t $(IMAGENAME):latest .
 
 download: LanguageTool-stable.zip
 	-rm -rf LanguageTool-$(VERSION) LanguageTool-$(UNPACKED_VERSION)
