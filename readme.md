@@ -28,6 +28,7 @@ docker run --name languagetool \
                         --cap-drop=ALL \
                         --user=65534:65534 \
                         --read-only \
+                        --tmpfs /tmp \
                         -p 127.0.0.1:8081:8081 \
                         --memory 412m --memory-swap 500m \
                         -e JAVAOPTIONS="-Xmx382M" \
