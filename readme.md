@@ -71,3 +71,24 @@ Other languages are listed at https://languagetool.org/download/ngram-data/.
 One can use them using web browser plugin "Local server (localhost)" setting by running:
 
     docker run -d --name languagetool -p 127.0.0.1:8081:8081 -v `pwd`/ngrams:/ngrams:ro --restart=unless-stopped ghcr.io/mwerlen/docker-languagetool
+
+### Memory with ngrams
+
+Loading ngrams needs much more memory than the minimal example above: with
+English and French ngrams, the live heap is about 520 MB and the container
+uses about 1.2 GB in total, so a `--memory 1g` limit gets the JVM OOM-killed
+on the first check. Size the heap explicitly instead of limiting the
+container:
+
+| ngrams installed | `JAVAOPTIONS`          |
+|------------------|------------------------|
+| French only      | `-Xms256m -Xmx614m`    |
+| English + French | `-Xms512m -Xmx1g`      |
+
+    docker run -d --name languagetool -p 127.0.0.1:8081:8081 \
+        -v `pwd`/ngrams:/ngrams:ro --restart=unless-stopped \
+        -e JAVAOPTIONS="-Xms512m -Xmx1g" \
+        ghcr.io/mwerlen/docker-languagetool
+
+If you still want a container limit as a safety net, keep at least ~700 MB
+above `-Xmx` (e.g. `--memory 2g` with `-Xmx1g`).
