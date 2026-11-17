@@ -1,18 +1,22 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-include Makefile.version
+# VERSION, shared with docker compose
+include .env
 
-NAME ?= languagetool
-PORT ?= 8081
-NGRAMS_DIR ?= $(CURDIR)/ngrams
+IMAGENAME := ghcr.io/mwerlen/docker-languagetool
+BUILDARG_VERSION := --build-arg VERSION=$(VERSION)
+BUILDARG_PLATFORM := --platform linux/amd64,linux/arm64/v8,linux/arm/v7
+
+# Read by compose.yaml
+export NGRAMS_DIR ?= $(CURDIR)/ngrams
+export PORT ?= 8081
+
 NGRAMS_URL := https://languagetool.org/download/ngram-data
-NGRAMS := en-20150817 fr-20150913
-# Mounted into the container: edit it and `make restart`, no rebuild needed
-CONFIG := $(CURDIR)/misc/server.properties
+NGRAMS_DATE_en := 20150817
+NGRAMS_DATE_fr := 20150913
 
 envout:
 	@echo "VERSION=$(VERSION)"
-	@echo "UNPACKED_VERSION=$(UNPACKED_VERSION)"
 	@echo "BUILDARG_VERSION=$(BUILDARG_VERSION)"
 	@echo "IMAGENAME=$(IMAGENAME)"
 	@echo "BUILDARG_PLATFORM=$(BUILDARG_PLATFORM)"
@@ -21,56 +25,47 @@ prepare:
 	sudo apt-get -qq -y install curl
 
 # Local image, for the current platform only
-build: download
-	docker buildx build $(BUILDARG_VERSION) --load -t $(IMAGENAME):latest -t $(IMAGENAME):$(VERSION) .
+build:
+	docker compose build
 
 # Check that the image builds on every published platform (CI, needs QEMU)
-build-multiarch: download
+build-multiarch:
 	docker buildx build $(BUILDARG_VERSION) $(BUILDARG_PLATFORM) -t $(IMAGENAME):latest .
 
-download: LanguageTool-stable.zip
-	-rm -rf LanguageTool-$(VERSION) LanguageTool-$(UNPACKED_VERSION)
-	echo ":: unzipping LanguageTool-stable.zip"
-	unzip -o LanguageTool-stable.zip 2>&1 1>/dev/null
-	@test -f LanguageTool-$(UNPACKED_VERSION)/languagetool-server.jar || \
-		{ echo ":: LanguageTool-stable.zip does not contain version $(UNPACKED_VERSION), found: $$(ls -d LanguageTool-*/)"; exit 1; }
+# Download and unpack the ngrams of one language, once
+# (en: ~9 GB zipped, ~15 GB extracted; fr: ~1.8 GB zipped)
+.PHONY: ngrams-en ngrams-fr
+ngrams-en: $(NGRAMS_DIR)/en
+ngrams-fr: $(NGRAMS_DIR)/fr
 
-LanguageTool-stable.zip:
-	curl -fL https://languagetool.org/download/LanguageTool-stable.zip -o LanguageTool-stable.zip
-
-# Download and unpack each ngram archive once (en: ~9 GB, fr: ~1.8 GB zipped)
-.PHONY: ngrams
-ngrams:
+$(NGRAMS_DIR)/%:
 	mkdir -p $(NGRAMS_DIR)
-	@for ngram in $(NGRAMS); do \
-		lang=$${ngram%%-*}; \
-		if [ -d "$(NGRAMS_DIR)/$$lang" ]; then \
-			echo ":: ngrams '$$lang' already present in $(NGRAMS_DIR)/$$lang"; \
-			continue; \
-		fi; \
-		echo ":: downloading ngrams '$$lang'"; \
-		curl -fL "$(NGRAMS_URL)/ngrams-$$ngram.zip" -o "$(NGRAMS_DIR)/ngrams-$$ngram.zip" && \
-		unzip -q "$(NGRAMS_DIR)/ngrams-$$ngram.zip" -d "$(NGRAMS_DIR)" && \
-		rm -f "$(NGRAMS_DIR)/ngrams-$$ngram.zip" || exit 1; \
-	done
+	curl -fL "$(NGRAMS_URL)/ngrams-$*-$(NGRAMS_DATE_$*).zip" -o "$@.zip"
+	rm -rf "$@.tmp"
+	unzip -q "$@.zip" -d "$@.tmp"
+	mv "$@.tmp/$*" "$@"
+	rm -rf "$@.tmp" "$@.zip"
 
-# Run the local image with English and French ngrams and the mounted config.
-# The container restarts automatically with the Docker daemon (i.e. at boot).
+# Build if needed and start the container, recreated only when the image or
+# compose.yaml changed. It restarts automatically with the Docker daemon.
 .PHONY: run
-run: ngrams
-	-docker rm -f $(NAME) >/dev/null 2>&1
-	docker run -d --name $(NAME) \
-		--restart=unless-stopped \
-		-p 127.0.0.1:$(PORT):8081 \
-		-v $(NGRAMS_DIR):/ngrams:ro \
-		-v $(CONFIG):/config/server.properties:ro \
-		$(IMAGENAME):latest
-	@echo ":: LanguageTool will be available at http://localhost:$(PORT) (check: curl http://localhost:$(PORT)/v2/languages)"
+run:
+	docker compose up -d --build
+	@echo ":: LanguageTool is available at http://localhost:$(PORT) (check: curl http://localhost:$(PORT)/v2/languages)"
 
-# Apply changes made to $(CONFIG)
+# Apply changes made to misc/server.properties or to the ngrams
 .PHONY: restart
 restart:
-	docker restart $(NAME)
+	docker compose restart
+
+.PHONY: stop
+stop:
+	docker compose down
+
+# Tests run in a separate compose project, without ngrams, so they do not
+# touch a running instance; TEST_PORT can be changed if 8081 is taken
+TEST_PORT ?= 8081
+TEST_COMPOSE := PORT=$(TEST_PORT) NGRAMS_DIR=$(CURDIR)/.ngrams-empty docker compose -p languagetool-test
 
 test: test-cleanup.1
 test: test-start
@@ -81,9 +76,8 @@ test: test-cleanup.2
 
 test-start:
 	@echo ""
-	docker run -d --name languagetool -p 8081:8081 \
-		-v $(CONFIG):/config/server.properties:ro \
-		$(IMAGENAME):latest
+	mkdir -p .ngrams-empty
+	$(TEST_COMPOSE) up -d --build
 	sleep 6
 
 test-run-test-lang:
@@ -91,7 +85,7 @@ test-run-test-lang:
 	curl \
 		-X GET \
 		--header 'Accept: application/json' \
-		'http://localhost:8081/v2/languages'
+		'http://localhost:$(TEST_PORT)/v2/languages'
 
 test-run-test-en:
 	@echo ""
@@ -100,7 +94,7 @@ test-run-test-en:
 		--header 'Content-Type: application/x-www-form-urlencoded' \
 		--header 'Accept: application/json' \
 		-d 'text=hello%20woorld&language=en-US&motherTongue=de-DE&enabledOnly=false' \
-		'http://localhost:8081/v2/check'
+		'http://localhost:$(TEST_PORT)/v2/check'
 
 test-run-test-fr:
 	@echo ""
@@ -108,13 +102,12 @@ test-run-test-fr:
 		--header 'Content-Type: application/x-www-form-urlencoded' \
 		--header 'Accept: application/json' \
 		-d 'text=hello%20woorld&language=fr&motherTongue=de-DE&enabledOnly=false' \
-		'http://localhost:8081/v2/check'
+		'http://localhost:$(TEST_PORT)/v2/check'
 
 .PHONY: test-cleanup
 test-cleanup.%:
 	@echo ""
-	-docker container stop languagetool
-	-docker container rm languagetool
+	-$(TEST_COMPOSE) down
 
 .PHONY: tag
 tag: tag-push

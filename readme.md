@@ -54,15 +54,22 @@ Any `LT_<key>=<value>` environment variable is appended to it and overrides
 the file's value, e.g. `-e LT_disabledRuleIds=DASH_RULE,WHITESPACE_RULE`.
 Available keys are listed by `HTTPServer --help`.
 
-## Running locally with make
+## Running locally with make and docker compose
 
-    make build    # build the local image
-    make run      # download en/fr ngrams once, start the container (restarts at boot)
-    make restart  # apply changes made to misc/server.properties
+[compose.yaml](compose.yaml) describes the whole local setup: port bound to
+localhost, ngrams and `server.properties` mounted read-only, no capabilities,
+read-only root filesystem, restart at boot. The LanguageTool version is set in
+[.env](.env).
 
-`make run` mounts `misc/server.properties`, so editing it and running
-`make restart` is enough. `NAME`, `PORT` and `NGRAMS_DIR` can be overridden,
-e.g. `make run PORT=8082`.
+    make ngrams-fr  # download French ngrams once (~2 GB zipped)
+    make ngrams-en  # download English ngrams once (~9 GB zipped, ~15 GB extracted)
+    make run        # build if needed and start; recreated only if something changed
+    make restart    # apply changes made to misc/server.properties or to the ngrams
+    make stop       # stop and remove the container
+
+`PORT` and `NGRAMS_DIR` can be overridden, e.g. `make run PORT=8082`. The
+image downloads LanguageTool itself during the build: `make build` (or
+`docker compose build`) needs nothing else.
 
 ## ngram support
 
@@ -104,18 +111,19 @@ One can use them using web browser plugin "Local server (localhost)" setting by 
 Loading ngrams needs much more memory than the minimal example above: with
 English and French ngrams, the live heap is about 520 MB and the container
 uses about 1.2 GB in total, so a `--memory 1g` limit gets the JVM OOM-killed
-on the first check. Size the heap explicitly instead of limiting the
-container:
+on the first check.
 
-| ngrams installed | `JAVAOPTIONS`          |
-|------------------|------------------------|
-| French only      | `-Xms256m -Xmx614m`    |
-| English + French | `-Xms512m -Xmx1g`      |
+When `JAVAOPTIONS` is not set, the container sizes the heap at start from the
+languages found in `/ngrams`:
 
-    docker run -d --name languagetool -p 127.0.0.1:8081:8081 \
-        -v `pwd`/ngrams:/ngrams:ro --restart=unless-stopped \
-        -e JAVAOPTIONS="-Xms512m -Xmx1g" \
-        ghcr.io/mwerlen/docker-languagetool
+| ngrams installed       | `JAVAOPTIONS`          |
+|------------------------|------------------------|
+| none                   | JVM defaults           |
+| French only            | `-Xms256m -Xmx614m`    |
+| English (+ French)     | `-Xms512m -Xmx1g`      |
+
+Set `-e JAVAOPTIONS=...` to override it. After adding ngrams, restart the
+container so the heap is sized again.
 
 If you still want a container limit as a safety net, keep at least ~700 MB
 above `-Xmx` (e.g. `--memory 2g` with `-Xmx1g`).

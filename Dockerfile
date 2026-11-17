@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 FROM docker.io/library/eclipse-temurin:21
 
-# see Makefile.version
+# see .env
 ARG VERSION
-ARG UNPACKED_VERSION
 
 LABEL maintainer="Maxime Werlen <maxime@werlen.fr>"
 
-ADD ./LanguageTool-"${UNPACKED_VERSION}" /LanguageTool-"${UNPACKED_VERSION}"
+# Download and unpack in a single layer so the zip is not kept in the image
+# (the base image has curl and jar, which unpacks zip files, but no unzip)
+RUN curl -fsSL "https://languagetool.org/download/LanguageTool-${VERSION}.zip" -o /tmp/lt.zip \
+    && cd /tmp && jar xf lt.zip \
+    && mv /tmp/LanguageTool-*/ /LanguageTool \
+    && rm -f /tmp/lt.zip
 
-WORKDIR /LanguageTool-"${UNPACKED_VERSION}"
+WORKDIR /LanguageTool
 
 COPY misc/start.sh misc/server.properties ./
 CMD [ "bash", "start.sh" ]

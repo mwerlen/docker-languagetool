@@ -1,10 +1,12 @@
 *.swp
 *.zip
 .dockerignore
+.env
 .git
 .gitignore
-.travis.yml
+.ngrams-empty
+LanguageTool-*/
 Makefile
+compose.yaml
 ngrams
 readme.md
-*.zip

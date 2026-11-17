@@ -5,8 +5,18 @@ EXTRAOPTIONS=${EXTRAOPTIONS:-}
 JAVAOPTIONS=${JAVAOPTIONS:-}
 CONFIG=/tmp/config.properties
 
-if [ -d "/ngrams" ]; then
+if [ -n "$(ls -A /ngrams 2>/dev/null)" ]; then
     EXTRAOPTIONS="${EXTRAOPTIONS} --languageModel /ngrams"
+fi
+
+# size the heap from the ngrams to load, unless JAVAOPTIONS is given
+# (measured: en+fr live heap ~520 MB, fr only much less, see readme)
+if [ -z "$JAVAOPTIONS" ]; then
+    if [ -d /ngrams/en ]; then
+        JAVAOPTIONS="-Xms512m -Xmx1g"
+    elif [ -d /ngrams/fr ]; then
+        JAVAOPTIONS="-Xms256m -Xmx614m"
+    fi
 fi
 
 # start from /config/server.properties when mounted, else from the one
