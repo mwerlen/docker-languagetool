@@ -37,6 +37,33 @@ docker run --name languagetool \
 
 Route information can be found at https://languagetool.org/http-api/swagger-ui/#/default, an easy route to test that it's running is `/v2/languages`.
 
+## Server configuration
+
+The server is started with `--config`, built from [misc/server.properties](misc/server.properties).
+It currently disables these rules:
+
+    disabledRuleIds=DASH_RULE
+
+A copy is bundled in the image as the default. To change it without
+rebuilding, mount your own file on `/config/server.properties` and restart
+the container:
+
+    docker run ... -v `pwd`/misc/server.properties:/config/server.properties:ro ...
+
+Any `LT_<key>=<value>` environment variable is appended to it and overrides
+the file's value, e.g. `-e LT_disabledRuleIds=DASH_RULE,WHITESPACE_RULE`.
+Available keys are listed by `HTTPServer --help`.
+
+## Running locally with make
+
+    make build    # build the local image
+    make run      # download en/fr ngrams once, start the container (restarts at boot)
+    make restart  # apply changes made to misc/server.properties
+
+`make run` mounts `misc/server.properties`, so editing it and running
+`make restart` is enough. `NAME`, `PORT` and `NGRAMS_DIR` can be overridden,
+e.g. `make run PORT=8082`.
+
 ## ngram support
 
 To support [ngrams] you need an additional volume or directory mounted to the

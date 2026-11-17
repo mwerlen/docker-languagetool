@@ -11,7 +11,7 @@ ADD ./LanguageTool-"${UNPACKED_VERSION}" /LanguageTool-"${UNPACKED_VERSION}"
 
 WORKDIR /LanguageTool-"${UNPACKED_VERSION}"
 
-COPY misc/start.sh .
+COPY misc/start.sh misc/server.properties ./
 CMD [ "bash", "start.sh" ]
 USER nobody
 EXPOSE 8081

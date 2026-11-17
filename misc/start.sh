@@ -3,25 +3,30 @@
 
 EXTRAOPTIONS=${EXTRAOPTIONS:-}
 JAVAOPTIONS=${JAVAOPTIONS:-}
+CONFIG=/tmp/config.properties
 
 if [ -d "/ngrams" ]; then
     EXTRAOPTIONS="${EXTRAOPTIONS} --languageModel /ngrams"
 fi
 
-# iterate over environment variables starting with LT_
-# and write their names without the LT_ prefix and
-# their values to /tmp/config.properties
+# start from /config/server.properties when mounted, else from the one
+# bundled in the image, then append environment variables starting with
+# LT_ (name without the prefix, and value); a key repeated later in the
+# file overrides the earlier one
+BASE_CONFIG=server.properties
+if [ -f /config/server.properties ]; then
+    BASE_CONFIG=/config/server.properties
+fi
+echo "using $BASE_CONFIG"
+cp "$BASE_CONFIG" "$CONFIG"
 for var in ${!LT_*}; do
-  EXTRA_LT=true
-  echo "${var#'LT_'}="${!var} >> /tmp/config.properties
+  echo "${var#'LT_'}="${!var} >> "$CONFIG"
 done
+EXTRAOPTIONS="${EXTRAOPTIONS} --config $CONFIG"
 
 echo JAVAOPTIONS=$JAVAOPTIONS
-if [ "$EXTRA_LT" = true ]; then
-  EXTRAOPTIONS="${EXTRAOPTIONS} --config /tmp/config.properties"
-    echo config.properties:
-    echo "$(cat /tmp/config.properties)"
-fi
+echo config.properties:
+cat "$CONFIG"
 echo EXTRAOPTIONS=$EXTRAOPTIONS
 
 java ${JAVAOPTIONS} -cp languagetool-server.jar org.languagetool.server.HTTPServer --port 8081 --public --allow-origin '*' ${EXTRAOPTIONS}
